@@ -1,17 +1,34 @@
+use std::fs;
+use std::path::PathBuf;
+
 use crate::cursor::Cursor;
 use crate::editor;
 use eframe::App;
+use rfd::FileDialog;
 use ropey::Rope;
 
 #[derive(Default)]
 pub struct Iglu {
     content: Rope,
     cursor: Cursor,
+    open_tab: TabOptions,
+}
+
+#[derive(Default, PartialEq)]
+enum TabOptions {
+    #[default]
+    None,
+    FileTab,
 }
 
 impl Iglu {
     pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         Self::default()
+    }
+
+    pub fn open_file(&mut self, path: PathBuf) {
+        let file_content = fs::read_to_string(path).expect("Wasn't able to read file");
+        self.content = Rope::from_str(&file_content);
     }
 
     pub fn handle_input(&mut self, ui: &egui::Ui) {
@@ -113,6 +130,11 @@ impl Iglu {
 
 impl App for Iglu {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        let _ = ui.horizontal(|ui| {
+            ui.selectable_value(&mut self.open_tab, TabOptions::FileTab, "File");
+        });
+        ui.separator();
+
         self.handle_input(ui);
         egui::Panel::bottom("status_bar").show_inside(ui, |ui| {
             ui.label(format!(
@@ -127,5 +149,19 @@ impl App for Iglu {
                 editor::show(ui, &self.content, &self.cursor);
             });
         });
+
+        // TODO: this shouldn't return a path
+        let res = match self.open_tab {
+            TabOptions::FileTab => FileDialog::new().set_directory("/").pick_file(),
+            _ => Option::None,
+        };
+
+        match res {
+            Some(path) => {
+                self.open_file(path);
+                self.open_tab = TabOptions::None;
+            }
+            None => self.open_tab = TabOptions::None,
+        }
     }
 }
