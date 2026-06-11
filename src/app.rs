@@ -24,6 +24,11 @@ impl Iglu {
                         ..
                     } => {
                         let cursor_index = self.cursor.char_index(&self.content);
+                        let distance_to_linefeed = self.cursor.distance_to_linefeed(&self.content);
+
+                        if distance_to_linefeed == 0 {
+                            self.cursor.row += 1;
+                        }
                         self.cursor
                             .move_to_char_index(&self.content, cursor_index + 1);
                     }
@@ -34,6 +39,11 @@ impl Iglu {
                         ..
                     } => {
                         let cursor_index = self.cursor.char_index(&self.content);
+
+                        if self.cursor.row != 0 && self.cursor.column == 0 {
+                            self.cursor.row -= 1;
+                        }
+
                         self.cursor
                             .move_to_char_index(&self.content, cursor_index.saturating_sub(1));
                     }

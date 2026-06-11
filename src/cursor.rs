@@ -28,4 +28,15 @@ impl Cursor {
 
         self.column = char_index - line_start;
     }
+
+    pub fn distance_to_linefeed(&mut self, content: &Rope) -> usize {
+        let cursor_pos = self.char_index(content);
+        for i in cursor_pos..content.len_chars() {
+            if self.row < content.len_lines() - 1 && content.get_char(i).unwrap() == '\n' {
+                return i - cursor_pos;
+            }
+        }
+        // TODO: change that :sob:
+        return 99999999;
+    }
 }
